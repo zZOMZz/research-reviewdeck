@@ -4,19 +4,24 @@
   "description": "",
   "main": "index.js",
   "bin": {
-    "reviewdeck": "dist/index.js"
+    "reviewdeck": "dist/reviewdeck.mjs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:cli": "esbuild src/index.ts --bundle --outfile=dist/reviewdeck.mjs --format=esm --platform=node --banner:js='#!/usr/bin/env node'",
+    "sync:ui": "node scripts/sync-ui.js",
+    "build": "pnpm build:cli && pnpm sync:ui"
   },
   "dependencies": {
+    "@reviewdeck/core": "workspace:*",
     "@reviewdeck/shared": "workspace:*",
-    "@reviewdeck/core": "workspace:*"
+    "cac": "^7.0.0"
   },
   "devDependencies": {
     "@reviewdeck/cli-ui": "workspace:*",
     "@reviewdeck/eslint-config": "workspace:*",
-    "@reviewdeck/typescript-config": "workspace:*"
+    "@reviewdeck/typescript-config": "workspace:*",
+    "esbuild": "^0.28.0"
   },
   "keywords": [],
   "author": "",
