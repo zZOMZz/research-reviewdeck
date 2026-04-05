@@ -1,0 +1,10 @@
+{
+  "extends": "@reviewdeck/typescript-config/node-library",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": ["src"]
+}

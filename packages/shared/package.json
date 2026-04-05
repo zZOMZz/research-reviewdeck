@@ -2,12 +2,27 @@
   "name": "@reviewdeck/shared",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc && esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --platform=node"
+  },
+  "dependencies": {
+    "typescript": "~5.9.3"
+  },
+  "devDependencies": {
+    "@reviewdeck/typescript-config": "workspace:*",
+    "esbuild": "^0.28.0"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "license": "ISC"
 }

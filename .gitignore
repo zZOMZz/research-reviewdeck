@@ -27,6 +27,7 @@ out/
 build
 dist
 packages/cli/static/web-ui/**/*
+*.tsbuildinfo
 
 
 # Debug
