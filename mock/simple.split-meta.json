@@ -1,0 +1,18 @@
+{
+  "groups": [
+    {
+      "description": "Update the installation instruction",
+      "changes": [0, 1],
+      "draftComments": [
+        {
+          "change": 1,
+          "body": "Mentioning `pnpm` here is clearer than the previous generic instruction."
+        }
+      ]
+    },
+    {
+      "description": "Clarify which config file should be used",
+      "changes": [2, 3]
+    }
+  ]
+}

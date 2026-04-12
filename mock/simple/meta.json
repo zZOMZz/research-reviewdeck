@@ -1,0 +1,23 @@
+[
+  {
+    "index": 0,
+    "description": "Update the installation instruction",
+    "draftComments": [
+      {
+        "id": "g1-draft1",
+        "sub": 0,
+        "change": 1,
+        "file": "docs/guide.md",
+        "line": 2,
+        "side": "additions",
+        "body": "Mentioning `pnpm` here is clearer than the previous generic instruction.",
+        "source": "agent"
+      }
+    ]
+  },
+  {
+    "index": 1,
+    "description": "Clarify which config file should be used",
+    "draftComments": []
+  }
+]

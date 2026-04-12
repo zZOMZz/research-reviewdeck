@@ -1,0 +1,28 @@
+{
+  "groups": [
+    {
+      "description": "Rename the parser module and start the migration guide",
+      "changes": ["0-2", "7-8"],
+      "draftComments": [
+        {
+          "change": 7,
+          "body": "The migration note now depends on the rename landing first, which is what this group guarantees."
+        }
+      ]
+    },
+    {
+      "description": "Tighten runtime defaults and finish the migration instructions",
+      "changes": ["3-6", "9-10"],
+      "draftComments": [
+        {
+          "change": 6,
+          "body": "Switching the default log level to `debug` may be noisy in production environments."
+        }
+      ]
+    },
+    {
+      "description": "Delete the obsolete legacy check script",
+      "changes": ["11-13"]
+    }
+  ]
+}

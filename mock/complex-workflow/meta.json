@@ -1,0 +1,39 @@
+[
+  {
+    "index": 0,
+    "description": "Rename the parser module and start the migration guide",
+    "draftComments": [
+      {
+        "id": "g1-draft1",
+        "sub": 0,
+        "change": 7,
+        "file": "docs/migration.md",
+        "line": 1,
+        "side": "additions",
+        "body": "The migration note now depends on the rename landing first, which is what this group guarantees.",
+        "source": "agent"
+      }
+    ]
+  },
+  {
+    "index": 1,
+    "description": "Tighten runtime defaults and finish the migration instructions",
+    "draftComments": [
+      {
+        "id": "g2-draft1",
+        "sub": 1,
+        "change": 6,
+        "file": "src/config.ts",
+        "line": 4,
+        "side": "additions",
+        "body": "Switching the default log level to `debug` may be noisy in production environments.",
+        "source": "agent"
+      }
+    ]
+  },
+  {
+    "index": 2,
+    "description": "Delete the obsolete legacy check script",
+    "draftComments": []
+  }
+]
