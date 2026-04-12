@@ -33,7 +33,7 @@ import { Textarea } from './components/ui/textarea'
 import {
   getCommentsForLine,
   isSubmissionShape,
-  parsePatchDiff,
+  buildRenderedDiff,
 } from './lib/review-utils'
 import type { ComposerState, LocalComment } from './types/review'
 
@@ -54,6 +54,7 @@ function App() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
+  // 获取patches数据
   useEffect(() => {
     let cancelled = false
 
@@ -106,7 +107,7 @@ function App() {
 
   const selectedPatch =
     patches.find((patch) => patch.index === selectedPatchId) ?? null
-  const selectedPatchFiles = selectedPatch ? parsePatchDiff(selectedPatch) : []
+  const selectedPatchFiles = selectedPatch ? buildRenderedDiff(selectedPatch) : []
   const selectedComments = selectedPatch
     ? commentsByPatch[selectedPatch.index] ?? []
     : []
@@ -193,6 +194,7 @@ function App() {
     }))
   }
 
+  // 提交review结果
   const submitReview = async () => {
     const payload: ReviewSubmission = {
       comments: Object.values(commentsByPatch).flat(),

@@ -48,6 +48,9 @@ importers:
 
   packages/cli-ui:
     dependencies:
+      '@reviewdeck/core':
+        specifier: workspace:*
+        version: link:../core
       '@reviewdeck/shared':
         specifier: workspace:*
         version: link:../shared

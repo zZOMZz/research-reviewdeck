@@ -1,9 +1,11 @@
-import type { ReviewComment, ReviewSide } from '../../../shared/src/types'
+import type { ReviewComment, ReviewSide } from '@reviewdeck/shared'
 
 export type ParsedDiffFile = {
   key: string
   srcFile: string
   dstFile: string
+  isNew?: boolean
+  isDelete?: boolean
   hunks: ParsedHunk[]
 }
 

@@ -12,12 +12,12 @@ import {
 import { resolve, extname } from "node:path";
 import { readFile, readdir, stat } from "node:fs/promises";
 import {
-  readStdin,
   type AgentDraftComment,
   type ReviewSubmission,
   type SubPatch,
 } from "@reviewdeck/shared";
 import { CAC } from "cac";
+import { readStdin } from "../utils/read";
 
 interface RenderOptions {
   port?: string;

@@ -2,9 +2,10 @@ import type {
   ReviewSide,
   ReviewSubmission,
   SubPatch,
-} from '../../../shared/src/types'
+} from "@reviewdeck/shared";
+import { parsePatch } from '@reviewdeck/core'
 
-import type { LocalComment, ParsedDiffFile, ParsedHunk } from '../types/review'
+import type { LocalComment, ParsedDiffFile, ParsedDiffLine } from '../types/review'
 
 export function getCommentsForLine(
   comments: LocalComment[],
@@ -33,124 +34,81 @@ export function isSubmissionShape(value: unknown): value is ReviewSubmission {
   )
 }
 
-export function parsePatchDiff(patch: SubPatch): ParsedDiffFile[] {
-  const files: ParsedDiffFile[] = []
-  const lines = patch.diff.split('\n')
+export function buildRenderedDiff(patch: SubPatch): ParsedDiffFile[] {
+  const filePatches = parsePatch(patch.diff);
 
-  let currentFile: ParsedDiffFile | null = null
-  let currentHunk: ParsedHunk | null = null
-  let oldLineNumber = 0
-  let newLineNumber = 0
-  let lineIndex = 0
+  return filePatches.map((patch, pIdx) => ({
+    key: `${patch.srcFile}-${patch.dstFile}-${pIdx}`,
+    srcFile: patch.srcFile,
+    dstFile: patch.dstFile,
+    isDelete: patch.isDelete,
+    isNew: patch.isNew,
+    hunks: patch.hunks.map((hunk, hIdx) => {
+      const header = `@@ -${hunk.srcStart},${hunk.srcCount} +${hunk.dstStart},${hunk.dstCount} @@`;
+      let oldLineNumber = hunk.srcStart;
+      let newLineNumber = hunk.dstStart;
 
-  for (const rawLine of lines) {
-    if (rawLine.startsWith('diff --git ')) {
-      const match = rawLine.match(/^diff --git a\/(.+?) b\/(.+)$/)
-      if (!match) {
-        continue
-      }
+      return {
+        header,
+        lines: hunk.lines.map((line, lIdx) => {
+          let row: ParsedDiffLine;
+          if (line.type === " ") {
+            row = {
+              key: `${pIdx}-${hIdx}-${lIdx}`,
+              kind: "context",
+              content: line.content,
+              oldLineNumber,
+              newLineNumber,
+            };
+            oldLineNumber += 1;
+            newLineNumber += 1;
+            return row;
+          } else if (line.type === "-") {
+            row = {
+              key: `${pIdx}-${hIdx}-${lIdx}`,
+              kind: "delete",
+              content: line.content,
+              oldLineNumber,
+              commentTarget: {
+                file: patch.srcFile,
+                line: oldLineNumber,
+                side: "deletions",
+              },
+            };
+            oldLineNumber += 1;
+            return row;
+          } else if (line.type === "+") {
+            row = {
+              key: `${pIdx}-${hIdx}-${lIdx}`,
+              kind: "add",
+              content: line.content,
+              newLineNumber,
+              commentTarget: {
+                file: patch.dstFile,
+                line: newLineNumber,
+                side: "additions",
+              },
+            };
+            newLineNumber += 1;
+            return row;
+          } else if (line.type === '\\') {
+            row = {
+              key: `${pIdx}-${hIdx}-${lIdx}`,
+              kind: 'meta',
+              content: 'No newline at end of file',
+            }
+            return row;
+          }
 
-      currentFile = {
-        key: `${match[1]}-${match[2]}-${files.length}`,
-        srcFile: match[1],
-        dstFile: match[2],
-        hunks: [],
-      }
-      files.push(currentFile)
-      currentHunk = null
-      continue
-    }
+          row = {
+            key: `${pIdx}-${hIdx}-${lIdx}`,
+            kind: "meta",
+            content: line.content,
+          };
 
-    if (!currentFile) {
-      continue
-    }
-
-    if (rawLine.startsWith('@@')) {
-      const match = rawLine.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/)
-      if (!match) {
-        continue
-      }
-
-      oldLineNumber = Number(match[1])
-      newLineNumber = Number(match[3])
-      currentHunk = {
-        header: rawLine,
-        lines: [],
-      }
-      currentFile.hunks.push(currentHunk)
-      continue
-    }
-
-    if (!currentHunk) {
-      continue
-    }
-
-    const lineKey = `${currentFile.key}-${currentHunk.header}-${lineIndex}`
-    lineIndex += 1
-
-    if (rawLine.startsWith('\\')) {
-      currentHunk.lines.push({
-        key: lineKey,
-        kind: 'meta',
-        content: rawLine.slice(1).trimStart(),
-      })
-      continue
-    }
-
-    const marker = rawLine[0]
-    const content = rawLine.slice(1)
-
-    if (marker === ' ') {
-      currentHunk.lines.push({
-        key: lineKey,
-        kind: 'context',
-        content,
-        oldLineNumber,
-        newLineNumber,
-      })
-      oldLineNumber += 1
-      newLineNumber += 1
-      continue
-    }
-
-    if (marker === '-') {
-      currentHunk.lines.push({
-        key: lineKey,
-        kind: 'delete',
-        content,
-        oldLineNumber,
-        commentTarget: {
-          file: currentFile.srcFile,
-          line: oldLineNumber,
-          side: 'deletions',
-        },
-      })
-      oldLineNumber += 1
-      continue
-    }
-
-    if (marker === '+') {
-      currentHunk.lines.push({
-        key: lineKey,
-        kind: 'add',
-        content,
-        newLineNumber,
-        commentTarget: {
-          file: currentFile.dstFile,
-          line: newLineNumber,
-          side: 'additions',
-        },
-      })
-      newLineNumber += 1
-      continue
-    }
-
-    currentHunk.lines.push({
-      key: lineKey,
-      kind: 'meta',
-      content: rawLine,
-    })
-  }
-
-  return files
+          return row;
+        }),
+      };
+    }),
+  }));
 }

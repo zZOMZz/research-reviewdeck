@@ -18,7 +18,8 @@
     "react-dom": "^19.2.4",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.2",
-    "@reviewdeck/shared": "workspace:*"
+    "@reviewdeck/shared": "workspace:*",
+    "@reviewdeck/core": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

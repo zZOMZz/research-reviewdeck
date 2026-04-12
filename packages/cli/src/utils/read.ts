@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 export async function readStdin(): Promise<string> {
   process.stdin.setEncoding("utf-8");
-  let result = ""
+  let result = "";
   for await (const chunk of process.stdin) {
     result += chunk;
   }

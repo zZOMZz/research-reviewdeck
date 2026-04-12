@@ -2,7 +2,8 @@ import { CAC } from "cac";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { parsePatch, indexChanges, validateMeta, generateSubPatches, reconstructBase, applyPatch, resolveSplitGroupMeta } from "@reviewdeck/core";
 import type { SplitMeta } from "@reviewdeck/shared";
-import { readFileOrStdin, type ResolvedSplitGroupMeta } from "@reviewdeck/shared";
+import { type ResolvedSplitGroupMeta } from "@reviewdeck/shared";
+import { readFileOrStdin } from "../utils/read";
 
 interface SplitOptions {
   output: string;
