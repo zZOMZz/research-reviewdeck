@@ -3,14 +3,13 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { parsePatch, indexChanges, validateMeta, generateSubPatches, reconstructBase, applyPatch, resolveSplitGroupMeta } from "@reviewdeck/core";
 import type { SplitMeta } from "@reviewdeck/shared";
 import { readFileOrStdin, type ResolvedSplitGroupMeta } from "@reviewdeck/shared";
-import { diff } from "node:util";
 
 interface SplitOptions {
   output: string;
 }
 
 export function registerSplitCommands(cli: CAC) {
-  cli.command("split <diff_file> <split_meta_file> [-o <file>]")
+  cli.command("split <diff_file> <split_meta_file>")
     .option("-o, --output <file>", "output file")
     .action(SplitAction);
 }

@@ -1,4 +1,3 @@
-
 /**
  * Render command: starts a local web server for diff review.
  *
@@ -6,10 +5,18 @@
  * blocks until the user submits review decisions, then outputs them to stdout.
  */
 
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type ServerResponse,
+} from "node:http";
 import { resolve, extname } from "node:path";
 import { readFile, readdir, stat } from "node:fs/promises";
-import { readStdin, type AgentDraftComment, type ReviewSubmission, type SubPatch } from "@reviewdeck/shared";
+import {
+  readStdin,
+  type AgentDraftComment,
+  type ReviewSubmission,
+  type SubPatch,
+} from "@reviewdeck/shared";
 import { CAC } from "cac";
 
 interface RenderOptions {
@@ -19,7 +26,8 @@ interface RenderOptions {
 const SUB_PATCH_SEPARATOR = "===SUB_PATCH===";
 
 export function registerRenderCommands(cli: CAC) {
-  cli.command("render <source> [-o <file>]")
+  cli
+    .command("render <source>")
     .option("-p, --port <port>", "port")
     .action(RenderAction);
 }
@@ -38,14 +46,14 @@ const RenderAction = async (source: string, options: RenderOptions) => {
     process.exit(1);
   }
 
-  console.error(`Loaded ${subPatches.length} sub-patches for review`)
-  const port = options.port ? parseInt(options.port, 10) : undefined
-  const submission = await startReviewServer(subPatches, { port })
+  console.error(`Loaded ${subPatches.length} sub-patches for review`);
+  const port = options.port ? parseInt(options.port, 10) : undefined;
+  const submission = await startReviewServer(subPatches, { port });
 
   // Output submission as JSON to stdout
   process.stdout.write(JSON.stringify(submission, null, 2));
   process.stdout.write("\n");
-}
+};
 
 async function findDir(candidates: string[]): Promise<string | null> {
   for (const dir of candidates) {
@@ -71,8 +79,8 @@ const MIME_TYPES: Record<string, string> = {
 
 async function resolveDistDir(): Promise<string> {
   const candidates = [
-    resolve(import.meta.dirname, "web"),
-    resolve(import.meta.dirname, "../../dist/web"),
+    resolve(import.meta.dirname, "web"), // for production
+    resolve(import.meta.dirname, "../../../cli-ui/dist"), // for development
   ];
   const dir = await findDir(candidates);
   if (!dir) {
@@ -88,79 +96,89 @@ async function resolveDistDir(): Promise<string> {
  */
 export async function startReviewServer(
   subPatches: SubPatch[],
-  opts: { port?: number } = {},
+  opts: { port?: number } = {}
 ): Promise<ReviewSubmission> {
   const port = opts.port ?? 3847;
   const distDir = await resolveDistDir();
 
   return new Promise<ReviewSubmission>((resolveComments) => {
-    const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-      const url = req.url ?? "/";
-
-      // API: serve sub-patches data
+    const server = createServer(async (req, res) => {
+      const url = req.url ?? "";
+      // 获得patch列表
       if (url === "/api/patches" && req.method === "GET") {
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, { "content-type": "application/json" });
         res.end(JSON.stringify(subPatches));
         return;
       }
 
-      // API: receive submitted comments
-      if (url === "/api/submit" && req.method === "POST") {
-        const chunks: Buffer[] = [];
-        req.on("data", (chunk) => chunks.push(chunk));
-        req.on("end", () => {
-          const submission: ReviewSubmission = JSON.parse(Buffer.concat(chunks).toString("utf-8"));
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ ok: true }));
+      // 完成修改后的提交请求67666666
+   if (url === "/api/submit" && req.method === "POST") {
+        req.setEncoding("utf-8");
+        let body = "";
+        for await (const chunk of req) {
+          body += chunk;
+        }
 
-          // Shut down after a brief delay to let the response flush
-          setTimeout(() => {
-            httpServer.close(() => resolveComments(submission));
-          }, 500);
-        });
+        const submission: ReviewSubmission = JSON.parse(body);
+        res.writeHead(200, { "content-type": "application/json" });
+        res.end(JSON.stringify(submission));
+
+        setTimeout(() => {
+          server.close(() => resolveComments(submission));
+        }, 300);
         return;
       }
 
-      // Static file serving
+      // 静态文件请求
       await serveStatic(distDir, url, res);
+      return;
     });
 
-    httpServer.listen(port, () => {
+    server.listen(port, () => {
       const url = `http://localhost:${port}`;
       console.error(`Review server running at ${url}`);
-      console.error("Waiting for review submission...\n");
+      console.error("Waiting for review submissions...");
 
-      // Open browser
-      import("node:child_process").then(({ exec }) => {
-        const cmd =
-          process.platform === "darwin"
-            ? "open"
-            : process.platform === "win32"
-              ? "start"
-              : "xdg-open";
-        exec(`${cmd} ${url}`);
-      });
+      // 打开浏览器
+      import("node:child_process")
+        .then(({ exec }) => {
+          const cmd =
+            process.platform === "darwin"
+              ? "open"
+              : process.platform === "win32"
+                ? "start"
+                : "xdg-open";
+          exec(`${cmd} ${url}`);
+        })
+        .catch((err) => {
+          console.error(`Failed to open browser: ${err.message}`);
+        });
     });
   });
 }
 
-async function serveStatic(distDir: string, url: string, res: ServerResponse): Promise<void> {
+async function serveStatic(
+  distDir: string,
+  url: string,
+  res: ServerResponse
+): Promise<void> {
   // Strip query string
   const pathname = url.split("?")[0]!;
 
-  // Resolve file path (SPA: fallback to index.html)
-  let filePath = resolve(distDir, pathname === "/" ? "index.html" : `.${pathname}`);
+  let filePath = resolve(distDir,
+    pathname === "/" ? "index.html" : `.${pathname}`
+  );
 
   try {
-    const fileStat = await stat(filePath);
+    const fileStat = await stat(filePath)
     if (fileStat.isDirectory()) {
       filePath = resolve(filePath, "index.html");
     }
-  } catch {
-    // File not found — SPA fallback
+  } catch (err) {
+    // 处理spa路由fallback
     filePath = resolve(distDir, "index.html");
   }
-
+  
   try {
     const content = await readFile(filePath);
     const ext = extname(filePath);
@@ -180,7 +198,10 @@ async function serveStatic(distDir: string, url: string, res: ServerResponse): P
  *   1. Legacy format: first patch raw, then `\n===SUB_PATCH=== description\n`
  *   2. Headered format: every patch starts with `===SUB_PATCH=== <json-meta>\n`
  */
-export function parseSubPatchesFromStdin(input: string, separator: string): SubPatch[] {
+export function parseSubPatchesFromStdin(
+  input: string,
+  separator: string
+): SubPatch[] {
   if (input.trimStart().startsWith(separator)) {
     return parseHeaderedSubPatches(input, separator);
   }
@@ -230,22 +251,33 @@ function parseLegacySubPatches(input: string, separator: string): SubPatch[] {
     const fileMatch = diff.match(/^diff --git a\/(.+?) b\//m);
     const description =
       desc?.trim() ??
-      (fileMatch ? `Changes to ${fileMatch[1]}` : `Sub-patch ${results.length + 1}`);
+      (fileMatch
+        ? `Changes to ${fileMatch[1]}`
+        : `Sub-patch ${results.length + 1}`);
 
-    results.push({ index: results.length, description, draftComments: [], diff });
+    results.push({
+      index: results.length,
+      description,
+      draftComments: [],
+      diff,
+    });
   }
   return results;
 }
 
 function parseSeparatorMetadata(
   raw: string | undefined,
-  fallbackIndex: number,
+  fallbackIndex: number
 ): {
   index?: number;
   description: string;
   draftComments?: AgentDraftComment[];
 } {
-  if (!raw) return { index: fallbackIndex, description: `Sub-patch ${fallbackIndex + 1}` };
+  if (!raw)
+    return {
+      index: fallbackIndex,
+      description: `Sub-patch ${fallbackIndex + 1}`,
+    };
   try {
     const parsed = JSON.parse(raw) as {
       index?: number;
@@ -254,7 +286,8 @@ function parseSeparatorMetadata(
     };
     return {
       index: parsed.index ?? fallbackIndex,
-      description: parsed.description?.trim() || `Sub-patch ${fallbackIndex + 1}`,
+      description:
+        parsed.description?.trim() || `Sub-patch ${fallbackIndex + 1}`,
       draftComments: parsed.draftComments ?? [],
     };
   } catch {
@@ -288,8 +321,11 @@ export async function parseSubPatchesFromDir(dir: string): Promise<SubPatch[]> {
   }[] = [];
   try {
     const raw = await readFile(resolve(dir, "meta.json"), "utf-8");
-    const meta: { index: number; description: string; draftComments?: AgentDraftComment[] }[] =
-      JSON.parse(raw);
+    const meta: {
+      index: number;
+      description: string;
+      draftComments?: AgentDraftComment[];
+    }[] = JSON.parse(raw);
     metaRecords = meta.sort((a, b) => a.index - b.index);
   } catch {
     // No meta.json — fall back to generated descriptions
@@ -300,7 +336,9 @@ export async function parseSubPatchesFromDir(dir: string): Promise<SubPatch[]> {
     const diff = await readFile(resolve(dir, files[i]!), "utf-8");
     const meta = metaRecords[i];
     const description =
-      meta?.description ?? diff.match(/^diff --git a\/(.+?) b\//m)?.[1] ?? `Sub-patch ${i + 1}`;
+      meta?.description ??
+      diff.match(/^diff --git a\/(.+?) b\//m)?.[1] ??
+      `Sub-patch ${i + 1}`;
     patches.push({
       index: i,
       description,

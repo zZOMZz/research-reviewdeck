@@ -14,6 +14,9 @@ import type {
   IndexedChange,
   SplitMeta,
   ResolvedSplitGroupMeta,
+  FileAlignmentInfo,
+  HunkAlignment,
+  AlignmentEntry,
 } from "@reviewdeck/shared";
 import { parsePatch } from "./patch.ts";
 
@@ -230,28 +233,6 @@ export function resolveSplitGroupMeta(
 // ---------------------------------------------------------------------------
 // Alignment: the core data model
 // ---------------------------------------------------------------------------
-
-interface AlignmentEntry {
-  kind: "context" | "delete" | "add";
-  content: string;
-  changeIndex?: number; // set for delete and add
-}
-
-interface HunkAlignment {
-  srcStart: number;
-  srcCount: number;
-  entries: AlignmentEntry[];
-}
-
-interface FileAlignmentInfo {
-  srcFile: string;
-  dstFile: string;
-  hunks: HunkAlignment[];
-  isNew: boolean;
-  isDelete: boolean;
-  isPureRename: boolean;
-}
-
 function buildAlignments(patches: FilePatch[]): FileAlignmentInfo[] {
   const result: FileAlignmentInfo[] = [];
   let changeIdx = 0;

@@ -3,7 +3,7 @@ import path from "node:path";
 
 const rootDir = path.resolve(import.meta.dirname, '..', '..', '..');
 const uiDir = path.resolve(rootDir, 'packages', 'cli-ui', 'dist');
-const targetDir = path.resolve(rootDir, 'packages', 'cli', 'static', 'web-ui')
+const targetDir = path.resolve(rootDir, 'packages', 'cli', 'dist', 'web')
 
 const main = () => {
   if (!fs.existsSync(uiDir)) {

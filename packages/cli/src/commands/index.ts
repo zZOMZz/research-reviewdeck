@@ -8,7 +8,7 @@ interface IndexOptions {
 }
 
 export function registerIndexCommands(cli: CAC) {
-  cli.command("index <diff_file> [-o <file>]")
+  cli.command("index <diff_file>")
     .option("-o, --output <file>", "output file")
     .action(IndexAction);
 }

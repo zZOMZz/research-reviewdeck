@@ -126,3 +126,26 @@ export interface SubPatch {
   diff: string;
   draftComments: AgentDraftComment[];
 }
+
+// Alignment types
+export interface AlignmentEntry {
+  kind: "context" | "delete" | "add";
+  content: string;
+  changeIndex?: number; // set for delete and add
+}
+
+export interface HunkAlignment {
+  srcStart: number;
+  srcCount: number;
+  entries: AlignmentEntry[];
+}
+
+export interface FileAlignmentInfo {
+  srcFile: string;
+  dstFile: string;
+  hunks: HunkAlignment[];
+  isNew: boolean;
+  isDelete: boolean;
+  isPureRename: boolean;
+}
+
