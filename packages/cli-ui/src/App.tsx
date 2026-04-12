@@ -9,12 +9,17 @@ import {
 
 import type {
   AgentDraftCommentDecision,
-  ReviewComment,
   ReviewSide,
   ReviewSubmission,
   SubPatch,
 } from '@reviewdeck/shared'
 
+import {
+  DecisionButton,
+  LineNumberCell,
+  MetaItem,
+  SummaryTile,
+} from './components/review/review-primitives'
 import { Badge } from './components/ui/badge'
 import { Button } from './components/ui/button'
 import {
@@ -25,41 +30,12 @@ import {
   CardTitle,
 } from './components/ui/card'
 import { Textarea } from './components/ui/textarea'
-
-type ParsedDiffFile = {
-  key: string
-  srcFile: string
-  dstFile: string
-  hunks: ParsedHunk[]
-}
-
-type ParsedHunk = {
-  header: string
-  lines: ParsedDiffLine[]
-}
-
-type ParsedDiffLine = {
-  key: string
-  kind: 'context' | 'delete' | 'add' | 'meta'
-  content: string
-  oldLineNumber?: number
-  newLineNumber?: number
-  commentTarget?: {
-    file: string
-    line: number
-    side: ReviewSide
-  }
-}
-
-type LocalComment = ReviewComment & { id: string }
-
-type ComposerState = {
-  patchIndex: number
-  lineKey: string
-  file: string
-  line: number
-  side: ReviewSide
-}
+import {
+  getCommentsForLine,
+  isSubmissionShape,
+  parsePatchDiff,
+} from './lib/review-utils'
+import type { ComposerState, LocalComment } from './types/review'
 
 function App() {
   const [patches, setPatches] = useState<SubPatch[]>([])
@@ -692,203 +668,6 @@ function App() {
       </div>
     </div>
   )
-}
-
-function SummaryTile({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-stone-800 bg-stone-900/80 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.24em] text-stone-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-stone-50">{value}</p>
-    </div>
-  )
-}
-
-function MetaItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs uppercase tracking-[0.24em] text-stone-500">{label}</p>
-      <p className="mt-1 font-medium text-stone-800">{value}</p>
-    </div>
-  )
-}
-
-function DecisionButton({
-  active,
-  label,
-  onClick,
-}: {
-  active: boolean
-  label: string
-  onClick: () => void
-}) {
-  return (
-    <Button
-      className={active ? 'border-stone-900 bg-stone-900 text-stone-50 hover:bg-stone-800' : undefined}
-      onClick={onClick}
-      size="sm"
-      type="button"
-      variant="secondary"
-    >
-      {label}
-    </Button>
-  )
-}
-
-function LineNumberCell({ value }: { value?: number }) {
-  return (
-    <div className="border-r border-stone-200 px-3 py-2 text-right text-xs text-stone-400">
-      {value ?? ''}
-    </div>
-  )
-}
-
-function getCommentsForLine(
-  comments: LocalComment[],
-  target?: { file: string; line: number; side: ReviewSide },
-) {
-  if (!target) {
-    return []
-  }
-
-  return comments.filter(
-    (comment) =>
-      comment.file === target.file &&
-      comment.line === target.line &&
-      comment.side === target.side,
-  )
-}
-
-function isSubmissionShape(value: unknown): value is ReviewSubmission {
-  if (!value || typeof value !== 'object') {
-    return false
-  }
-
-  return (
-    Array.isArray((value as ReviewSubmission).comments) &&
-    Array.isArray((value as ReviewSubmission).draftComments)
-  )
-}
-
-function parsePatchDiff(patch: SubPatch): ParsedDiffFile[] {
-  const files: ParsedDiffFile[] = []
-  const lines = patch.diff.split('\n')
-
-  let currentFile: ParsedDiffFile | null = null
-  let currentHunk: ParsedHunk | null = null
-  let oldLineNumber = 0
-  let newLineNumber = 0
-  let lineIndex = 0
-
-  for (const rawLine of lines) {
-    if (rawLine.startsWith('diff --git ')) {
-      const match = rawLine.match(/^diff --git a\/(.+?) b\/(.+)$/)
-      if (!match) {
-        continue
-      }
-
-      currentFile = {
-        key: `${match[1]}-${match[2]}-${files.length}`,
-        srcFile: match[1],
-        dstFile: match[2],
-        hunks: [],
-      }
-      files.push(currentFile)
-      currentHunk = null
-      continue
-    }
-
-    if (!currentFile) {
-      continue
-    }
-
-    if (rawLine.startsWith('@@')) {
-      const match = rawLine.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/)
-      if (!match) {
-        continue
-      }
-
-      oldLineNumber = Number(match[1])
-      newLineNumber = Number(match[3])
-      currentHunk = {
-        header: rawLine,
-        lines: [],
-      }
-      currentFile.hunks.push(currentHunk)
-      continue
-    }
-
-    if (!currentHunk) {
-      continue
-    }
-
-    const lineKey = `${currentFile.key}-${currentHunk.header}-${lineIndex}`
-    lineIndex += 1
-
-    if (rawLine.startsWith('\\')) {
-      currentHunk.lines.push({
-        key: lineKey,
-        kind: 'meta',
-        content: rawLine.slice(1).trimStart(),
-      })
-      continue
-    }
-
-    const marker = rawLine[0]
-    const content = rawLine.slice(1)
-
-    if (marker === ' ') {
-      currentHunk.lines.push({
-        key: lineKey,
-        kind: 'context',
-        content,
-        oldLineNumber,
-        newLineNumber,
-      })
-      oldLineNumber += 1
-      newLineNumber += 1
-      continue
-    }
-
-    if (marker === '-') {
-      currentHunk.lines.push({
-        key: lineKey,
-        kind: 'delete',
-        content,
-        oldLineNumber,
-        commentTarget: {
-          file: currentFile.srcFile,
-          line: oldLineNumber,
-          side: 'deletions',
-        },
-      })
-      oldLineNumber += 1
-      continue
-    }
-
-    if (marker === '+') {
-      currentHunk.lines.push({
-        key: lineKey,
-        kind: 'add',
-        content,
-        newLineNumber,
-        commentTarget: {
-          file: currentFile.dstFile,
-          line: newLineNumber,
-          side: 'additions',
-        },
-      })
-      newLineNumber += 1
-      continue
-    }
-
-    currentHunk.lines.push({
-      key: lineKey,
-      kind: 'meta',
-      content: rawLine,
-    })
-  }
-
-  return files
 }
 
 export default App
