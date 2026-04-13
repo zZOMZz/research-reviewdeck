@@ -35,9 +35,12 @@ import {
   isSubmissionShape,
   buildRenderedDiff,
 } from './lib/review-utils'
+import { supportedLocales, type Locale } from './i18n/types'
+import { useI18n } from './i18n/useI18n'
 import type { ComposerState, LocalComment } from './types/review'
 
 function App() {
+  const { locale, setLocale, messages } = useI18n()
   const [patches, setPatches] = useState<SubPatch[]>([])
   const [selectedPatchId, setSelectedPatchId] = useState<number | null>(null)
   const [commentsByPatch, setCommentsByPatch] = useState<
@@ -237,7 +240,7 @@ function App() {
         <Card className="w-full max-w-lg">
           <CardContent className="flex items-center justify-center gap-3 py-12 text-stone-600">
             <LoaderCircle className="size-5 animate-spin" />
-            Loading patches...
+            {messages.review.loading}
           </CardContent>
         </Card>
       </div>
@@ -249,11 +252,13 @@ function App() {
       <div className="flex min-h-screen items-center justify-center px-6 py-10">
         <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle>Unable to load patches</CardTitle>
+            <CardTitle>{messages.review.loadErrorTitle}</CardTitle>
             <CardDescription>{loadError}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => window.location.reload()}>Reload</Button>
+            <Button onClick={() => window.location.reload()}>
+              {messages.review.reload}
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -265,8 +270,10 @@ function App() {
       <div className="flex min-h-screen items-center justify-center px-6 py-10">
         <Card className="w-full max-w-lg">
           <CardHeader>
-            <CardTitle>No patches available</CardTitle>
-            <CardDescription>The backend returned an empty patch list.</CardDescription>
+            <CardTitle>{messages.review.emptyStateTitle}</CardTitle>
+            <CardDescription>
+              {messages.review.emptyStateDescription}
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -279,27 +286,60 @@ function App() {
         <aside className="border-b border-stone-300/80 bg-stone-950 text-stone-100 lg:min-h-screen lg:w-[340px] lg:border-b-0 lg:border-r">
           <div className="sticky top-0 flex flex-col gap-6 bg-stone-950/95 p-6 backdrop-blur">
             <div className="space-y-2">
+              <label
+                className="block text-xs font-medium uppercase tracking-[0.24em] text-stone-500"
+                htmlFor="locale-select"
+              >
+                {messages.common.localeLabel}
+              </label>
+              <select
+                className="w-full rounded-xl border border-stone-700 bg-stone-900 px-3 py-2 text-sm text-stone-100 outline-none focus:border-amber-300"
+                id="locale-select"
+                onChange={(event) => setLocale(event.target.value as Locale)}
+                value={locale}
+              >
+                {supportedLocales.map((supportedLocale) => (
+                  <option key={supportedLocale} value={supportedLocale}>
+                    {messages.common.localeOptions[supportedLocale]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.32em] text-amber-300/80">
-                Review Deck
+                {messages.review.deckEyebrow}
               </p>
               <h1 className="font-serif text-3xl font-semibold text-stone-50">
-                Patch Review
+                {messages.review.pageTitle}
               </h1>
               <p className="text-sm text-stone-400">
-                Review patch metadata, inspect diffs, add line comments, then submit one payload to the CLI server.
+                {messages.review.pageDescription}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <SummaryTile label="Patches" value={String(patches.length)} />
-              <SummaryTile label="Comments" value={String(totalCommentCount)} />
-              <SummaryTile label="Drafts" value={String(Object.keys(draftDecisions).length)} />
-              <SummaryTile label="Resolved" value={String(totalResolvedDrafts)} />
+              <SummaryTile
+                label={messages.review.summary.patches}
+                value={String(patches.length)}
+              />
+              <SummaryTile
+                label={messages.review.summary.comments}
+                value={String(totalCommentCount)}
+              />
+              <SummaryTile
+                label={messages.review.summary.drafts}
+                value={String(Object.keys(draftDecisions).length)}
+              />
+              <SummaryTile
+                label={messages.review.summary.resolved}
+                value={String(totalResolvedDrafts)}
+              />
             </div>
 
             <div className="space-y-3">
               <p className="text-xs font-medium uppercase tracking-[0.28em] text-stone-500">
-                Patch Queue
+                {messages.review.patchQueueTitle}
               </p>
               <div className="space-y-2">
                 {patches.map((patch) => {
@@ -329,7 +369,7 @@ function App() {
                               #{patch.index}
                             </Badge>
                             <span className="text-xs uppercase tracking-[0.24em] text-stone-500">
-                              Group {patch.index}
+                              {messages.review.patchGroupLabel(patch.index)}
                             </span>
                           </div>
                           <p className="mt-3 line-clamp-2 text-sm leading-6">
@@ -344,9 +384,9 @@ function App() {
                         />
                       </div>
                       <div className="mt-4 flex items-center gap-2 text-xs text-stone-500">
-                        <span>{patch.draftComments.length} draft hints</span>
+                        <span>{messages.review.draftHints(patch.draftComments.length)}</span>
                         <span className="size-1 rounded-full bg-current opacity-50" />
-                        <span>{patchComments.length} comments</span>
+                        <span>{messages.review.commentCount(patchComments.length)}</span>
                       </div>
                     </button>
                   )
@@ -357,6 +397,9 @@ function App() {
         </aside>
 
         <main className="flex-1 px-4 py-4 pb-40 sm:px-6 lg:px-8">
+          {/* TODO: 从这里开始，把剩余硬编码英文文案逐步替换成 messages.review / messages.enums。 */}
+          {/* TODO: 优先替换 Badge、Button、标题、空态、提示文案，再处理复数和插值句子。 */}
+          {/* TODO: 不要直接渲染 draft status 和 review side 原始枚举值，改用 messages.enums 映射。 */}
           <div className="mx-auto flex max-w-[1200px] flex-col gap-5">
             <Card>
               <CardHeader className="gap-4 md:flex-row md:items-start md:justify-between">
