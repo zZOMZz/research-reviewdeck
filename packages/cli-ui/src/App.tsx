@@ -11,7 +11,7 @@ import type {
   AgentDraftCommentDecision,
   ReviewSide,
   ReviewSubmission,
-  SubPatch,
+  SubPatch
 } from '@reviewdeck/shared'
 
 import {
@@ -32,15 +32,13 @@ import {
 import { Textarea } from './components/ui/textarea'
 import {
   getCommentsForLine,
-  isSubmissionShape,
   buildRenderedDiff,
 } from './lib/review-utils'
-import { supportedLocales, type Locale } from './i18n/types'
 import { useI18n } from './i18n/useI18n'
 import type { ComposerState, LocalComment } from './types/review'
 
 function App() {
-  const { locale, setLocale, t } = useI18n()
+  const { t } = useI18n()
   const [patches, setPatches] = useState<SubPatch[]>([])
   const [selectedPatchId, setSelectedPatchId] = useState<number | null>(null)
   const [commentsByPatch, setCommentsByPatch] = useState<
@@ -219,11 +217,6 @@ function App() {
 
       if (!response.ok) {
         throw new Error(`Failed to submit review (${response.status})`)
-      }
-
-      const body = (await response.json()) as ReviewSubmission
-      if (!isSubmissionShape(body)) {
-        throw new Error('Server returned an unexpected response shape')
       }
 
       setSubmitted(true)
