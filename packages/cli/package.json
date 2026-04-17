@@ -2,7 +2,7 @@
   "name": "@reviewdeck/cli",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/reviewdeck.mjs",
   "bin": {
     "reviewdeck": "dist/reviewdeck.mjs"
   },
