@@ -277,9 +277,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-transparent text-stone-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1680px] flex-col lg:flex-row">
-        <aside className="border-b border-stone-300/80 bg-stone-950 text-stone-100 lg:min-h-screen lg:w-[340px] lg:border-b-0 lg:border-r">
-          <div className="sticky top-0 flex flex-col gap-6 bg-stone-950/95 p-6 backdrop-blur">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1680px] flex-col lg:flex-row lg:items-start">
+        <aside className="flex flex-col justify-between border-b border-stone-300/80 bg-stone-950 text-stone-100 lg:sticky lg:top-0 lg:h-screen lg:max-h-screen lg:w-[340px] lg:shrink-0 lg:self-start lg:overflow-y-auto lg:border-b-0 lg:border-r">
+          <div className="top-0 flex flex-col gap-6 bg-stone-950/95 p-6 backdrop-blur">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.32em] text-amber-300/80">
                 {t('review.deckEyebrow')}
@@ -368,9 +368,60 @@ function App() {
               </div>
             </div>
           </div>
+          <div className="border-t border-stone-800/80 bg-stone-950/95 p-4 shadow-[0_-20px_48px_-36px_rgba(251,191,36,0.45)] backdrop-blur lg:sticky lg:bottom-0">
+            <Card className="overflow-hidden border-stone-800 bg-stone-900/90 text-stone-50 shadow-[0_22px_70px_-38px_rgba(0,0,0,0.9)]">
+              <CardContent className="flex flex-col gap-4 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-300">
+                      {t('review.floatingSummaryTitle')}
+                    </p>
+                    <p className="text-sm leading-6 text-stone-300">
+                      {t('review.floatingSummaryDescription', { commentCount: totalCommentCount, resolvedCount: totalResolvedDrafts })}
+                    </p>
+                  </div>
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-amber-300/30 bg-amber-300/10 text-amber-200">
+                    <Send className="size-4" />
+                  </div>
+                </div>
+
+                {submitError ? (
+                  <div className="rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-sm leading-6 text-rose-200">
+                    {submitError}
+                  </div>
+                ) : submitted ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+                    <Check className="size-4 shrink-0" />
+                    {t('review.submittedSuccess')}
+                  </div>
+                ) : null}
+
+                <div className="flex flex-col gap-2">
+                  <Button
+                    className="h-11 w-full bg-amber-300 font-semibold text-stone-950 shadow-[0_12px_30px_-18px_rgba(251,191,36,0.9)] hover:bg-amber-200"
+                    disabled={submitting}
+                    onClick={submitReview}
+                    type="button"
+                  >
+                    {submitting ? (
+                      <>
+                        <LoaderCircle className="size-4 animate-spin" />
+                        {t('review.submitting')}
+                      </>
+                    ) : (
+                      <>
+                        <Send className="size-4" />
+                        {t('review.submitReview')}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </aside>
 
-        <main className="flex-1 px-4 py-4 pb-40 sm:px-6 lg:px-8">
+        <main className="flex-1 px-4 py-4 pb-40 sm:px-6 lg:flex-1 lg:px-8 lg:pb-8">
           <div className="mx-auto flex max-w-[1200px] flex-col gap-5">
             <Card>
               <CardHeader className="gap-4 md:flex-row md:items-start md:justify-between">
@@ -644,58 +695,6 @@ function App() {
             </Card>
           </div>
         </main>
-      </div>
-
-      <div className="fixed bottom-6 right-6 z-50">
-        <Card className="min-w-[300px] border-stone-900 bg-stone-950 text-stone-50 shadow-2xl">
-          <CardContent className="flex flex-col gap-4 p-4">
-            <div className="space-y-1">
-              <p className="text-xs uppercase tracking-[0.28em] text-amber-300/80">
-                {t('review.floatingSummaryTitle')}
-              </p>
-              <p className="text-sm text-stone-300">
-                {t('review.floatingSummaryDescription', { commentCount: totalCommentCount, resolvedCount: totalResolvedDrafts })}
-              </p>
-              {submitError ? (
-                <p className="text-sm text-rose-300">{submitError}</p>
-              ) : submitted ? (
-                <p className="text-sm text-emerald-300">
-                  {t('review.submittedSuccess')}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                className="bg-amber-400 text-stone-950 hover:bg-amber-300"
-                disabled={submitting}
-                onClick={submitReview}
-                type="button"
-              >
-                {submitting ? (
-                  <>
-                    <LoaderCircle className="size-4 animate-spin" />
-                    {t('review.submitting')}
-                  </>
-                ) : (
-                  <>
-                    <Send className="size-4" />
-                    {t('review.submitReview')}
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={() => {
-                  setSubmitted(false)
-                  setSubmitError(null)
-                }}
-                type="button"
-                variant="secondary"
-              >
-                {t('review.clearStatus')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

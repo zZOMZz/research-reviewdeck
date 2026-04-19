@@ -75,6 +75,5 @@ export const enMessages: I18nMessages = {
     submittedSuccess: 'Review submitted successfully.',
     submitting: 'Submitting...',
     submitReview: 'Submit Review',
-    clearStatus: 'Clear Status',
   },
 }

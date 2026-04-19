@@ -71,7 +71,6 @@ export type I18nMessages = {
     submittedSuccess: string
     submitting: string
     submitReview: string
-    clearStatus: string
   }
 }
 
