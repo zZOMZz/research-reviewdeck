@@ -5,13 +5,17 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -rf dist && tsc && esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --platform=node"
+    "build": "rm -rf dist && tsc && esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --platform=node",
+    "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
     "@diffdeck/typescript-config": "workspace:*",
