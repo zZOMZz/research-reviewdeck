@@ -1,4 +1,3 @@
-export type { SplitMeta } from "@diffdeck/shared";
-export * from "./diff.ts";
-export * from "./patch.ts";
-export * from "./split.ts";
+export * from "./diff.js";
+export * from "./patch.js";
+export * from "./split.js";

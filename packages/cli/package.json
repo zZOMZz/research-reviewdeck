@@ -1,12 +1,13 @@
 {
-  "name": "diffdeck",
-  "version": "1.0.1",
+  "name": "@diffdeck/cli",
+  "version": "1.0.0",
   "description": "",
   "bin": {
     "diffdeck": "dist/diffdeck.mjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "skills"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -21,7 +22,6 @@
     "cac": "^7.0.0"
   },
   "devDependencies": {
-    "@diffdeck/typescript-config": "workspace:*",
     "@types/node": "^24.12.0",
     "esbuild": "^0.28.0"
   },

@@ -17,7 +17,7 @@ import type {
   HunkAlignment,
   AlignmentEntry,
 } from "@diffdeck/shared";
-import { parsePatch } from "./patch.ts";
+import { parsePatch } from "./patch.js";
 
 
 // ---------------------------------------------------------------------------

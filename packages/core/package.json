@@ -4,7 +4,7 @@
   "description": "",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },
@@ -13,15 +13,11 @@
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -rf dist && tsc && esbuild src/index.ts --bundle --outfile=dist/index.mjs --format=esm --platform=node",
+    "build": "rm -rf dist && tsc",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
     "@diffdeck/shared": "workspace:*"
-  },
-  "devDependencies": {
-    "esbuild": "^0.28.0",
-    "@diffdeck/typescript-config": "workspace:*"
   },
   "keywords": [],
   "author": "",

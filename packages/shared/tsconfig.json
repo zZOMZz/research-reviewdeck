@@ -1,10 +1,22 @@
 {
-  "extends": "@diffdeck/typescript-config/node-library",
+   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "rootDir": "./src",
     "outDir": "./dist",
-    "emitDeclarationOnly": true,
-    "declarationMap": false
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"]
   },
   "include": ["src"]
 }
