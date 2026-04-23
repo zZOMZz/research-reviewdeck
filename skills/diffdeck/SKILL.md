@@ -9,9 +9,26 @@ description: Split a large PR/MR diff into reiviewable sub-patches for eaiser co
 默认设置：
 - 除非用户明确要求你亲自review代码， 否则不要使用你的自动reivew code流程
 - 如果用户想要 PR 审查帮助， 不要在 `split` 之后停止。 除非用户明确只需要拆分后的数据， 否则继续执行`render` 命令
-- 通过 `npx` 调用CLI时， 使用 `npx diffdeck@latest ...`
+- 通过 `npx` 调用CLI时， 使用 `npx @diffdeck/cli@latest ...`
+- DiffDeck 运行过程中的临时产物默认放到 `/tmp` 下的独立目录中， 不要把 `diffdeck-meta.json`、索引文件或 `output/` 写入当前仓库， 除非用户明确要求保留这些文件。
 
 # 主路径
+
+### 0. 准备临时工作目录
+
+在开始索引前先创建一个临时目录， 后续生成的索引、拆分元数据和子补丁都放在这里：
+
+```bash
+mktemp -d /tmp/diffdeck-XXXXXX
+```
+
+下文用 `<tmpdir>` 表示这个目录。 如果用户提供的 `.diff` 文件已经在仓库中， 可以直接读取该文件； 不需要复制到临时目录。
+
+如果后续需要反复查看完整索引， 优先写入临时目录：
+
+```bash
+npx @diffdeck/cli@latest index pr.diff > <tmpdir>/index.txt
+```
 
 ### 1. 获取diff
 
@@ -45,7 +62,7 @@ git diff --cached > pr.diff
 ### 2. 为改动建立索引
 
 ```bash
-npx diffdeck index pr.diff
+npx @diffdeck/cli@latest index pr.diff
 ```
 
 这个命令用来打印一个带编号的改动行列表。 这些索引就是输入给LLM在拆分元素中分组的单位
@@ -86,12 +103,19 @@ npx diffdeck index pr.diff
 ### 5. 拆分并验证
 
 ```bash
-echo '<meta JSON>' | npx diffdeck split pr.diff -
+echo '<meta JSON>' | npx @diffdeck/cli@latest split pr.diff -
 ```
 
 或者将结果写入指定文件及下：
 ```bash
-echo '<meta JSON>' | npx diffdeck split pr.diff - -o output/
+echo '<meta JSON>' | npx @diffdeck/cli@latest split pr.diff - -o <tmpdir>/output/
+```
+
+如果为了便于重试需要保存元数据， 写到临时目录：
+
+```bash
+echo '<meta JSON>' > <tmpdir>/meta.json
+npx @diffdeck/cli@latest split pr.diff <tmpdir>/meta.json -o <tmpdir>/output/
 ```
 
 这个命令在执行时， 会验证元数据的有效性、生成子补丁， 并验证它们能否重新组合回原始diff。
@@ -103,12 +127,12 @@ echo '<meta JSON>' | npx diffdeck split pr.diff - -o output/
 `split`命令成功后， 默认下一步是人工进行实时reiview审查：
 
 ```bash
-npx reiviewdeck render output/
+npx @diffdeck/cli@latest render <tmpdir>/output/
 ```
 
 或者从stdin输入
 ```bash
-echo '<meta JSON>' | npx diffdeck split pr.diff - | npx diffdeck render -
+echo '<meta JSON>' | npx @diffdeck/cli@latest split pr.diff - | npx @diffdeck/cli@latest render -
 ```
 
 运行render命令后， 会在本地打开一个`httpServer`，并打开浏览器， 阻塞直到人工review完成，并向stdout打印一个reivew完成后提交的JSON对象
@@ -118,6 +142,7 @@ echo '<meta JSON>' | npx diffdeck split pr.diff - | npx diffdeck render -
 - 当`split`命令成功后， 如果当前环境支持本地reivew对话， 就继续执行后续的`render`命令， 不要停在`split succeeded`
 - 将`comments`视为最终的人工reivew comment载荷
 - 将`draftComments`视为溯源信息，标明各条agent draftComment的状态： resolved（已采纳）、rejected（已拒绝）、pending（未处理）
+- `render` 成功返回结果并已经提取出 `comments` / `draftComments` 后， 如果用户没有要求保留拆分产物， 删除本次使用的 `<tmpdir>`。 如果 `render` 未完成、失败或需要用户继续查看子补丁， 暂时保留 `<tmpdir>` 并在回复中说明路径。
 
 ### 7. 将comment提交回Github/来源系统中
 
